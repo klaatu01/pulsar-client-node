@@ -60,11 +60,7 @@ void TokenSupplierProxy(Napi::Env env, Napi::Function jsCallback, TokenSupplierP
 }
 
 char *TokenSupplier(void *ctx) {
-  TokenSupplierCallback *tokenSupplierCallback = (TokenSupplierCallback *)ctx;
-  if (tokenSupplierCallback->callback.Acquire() != napi_ok) {
-    char *empty = (char *)malloc(0);
-    return empty;
-  }
+  auto *tokenSupplierCallback = static_cast<TokenSupplierCallback *>(ctx);
 
   std::promise<void> promise;
   std::future<void> future = promise.get_future();
@@ -73,7 +69,6 @@ char *TokenSupplier(void *ctx) {
       new TokenSupplierProxyData([&promise]() { promise.set_value(); }));
 
   tokenSupplierCallback->callback.BlockingCall(dataPtr.get(), TokenSupplierProxy);
-  tokenSupplierCallback->callback.Release();
 
   future.wait();
 
